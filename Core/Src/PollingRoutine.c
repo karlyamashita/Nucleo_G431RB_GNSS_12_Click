@@ -68,27 +68,34 @@ void PollingRoutine(void)
 void UART_Parse_1(UartBufferStruct *msg)
 {
 	UartDataStruct *ptr;
+	char str[32] = {0};
 
-	if(UART_RxMessagePending(msg)) // not doing anything with data, just keeping the ring buffer pointers moving along
+	if(UART_RxMessagePending(msg))
 	{
 		ptr = msg->rx.msgToParse;
 
-		if(ParseMode) // parse data
+		if(ParseMode) // parse data. We're parsing 3 messages here
 		{
 			if(strncmp((char*)ptr->data, "$GNVTG", strlen("$GNVTG")) == 0)
 			{
-				NMEA_VTG((char*)ptr->data);
+				NMEA_GNVTG((char*)ptr->data);
 			}
 			else if(strncmp((char*)ptr->data, "$GNGLL", strlen("$GNGLL")) == 0)
 			{
-				NMEA_GLL((char*)ptr->data);
+				NMEA_GNGLL((char*)ptr->data);
 			}
+			else if(strncmp((char*)ptr->data, "$GNRMC", strlen("$GNRMC")) == 0)
+			{
+				NMEA_GNRMC((char*)ptr->data);
+			}
+			// user can add more messages to parse
 			else // unknown command
 			{
-
+				sprintf(str, "%s is not in the list to parse.", strtok((char*)ptr->data, ","));
+				NotifyUser(&lpuart1, str, true);
 			}
 		}
-		else // show normal
+		else // pass through messages from NEO-M8N to VCP
 		{
 			NotifyUser(&lpuart1, (char*)ptr->data, false);
 		}
