@@ -9,6 +9,7 @@
 #include "main.h"
 
 extern UartBufferStruct lpuart1;
+extern Flags_t flags;
 
 int NMEA_GNGLL(char *msg)
 {
@@ -69,13 +70,63 @@ int NMEA_GNRMC(char *msg)
 	char *mvew = strtok_f(NULL, ',');
 	char *posMode = strtok_f(NULL, ',');
 	char *navStatus = strtok_f(NULL, '*');
+	double latitude;
+	double longitude;
+	double latTime;
+	double lonTime;
 
 	sprintf(str, "%s = time: %s, status: %s, lat: %s, ns: %s, lon: %s, ew: %s, spd: %s, cog: %s, date: %s, mvew: %s, posMode: %s, navStatus: %s",
 						nmea, time, status, lat, ns, lon, ew, spd, cog, date, mvew, posMode, navStatus);
 
 	NotifyUser(&lpuart1, str, true);
 
+	if(flags.googleMaps)
+	{
+		// parse lat/lon for Google maps
+		latitude = (atof(lat) * .01);
+		sprintf(str, "%f", latitude);
+		latTime = (modf(latitude, &latitude)  / 60) * 1000000;
+
+		longitude = (atof(lon) * .01);
+		sprintf(str, "%f", longitude);
+		lonTime = (modf(longitude, &longitude) / 60) * 1000000;
+
+		Nop();
+
+		sprintf(str, "Copy this to Google Maps-> %ld.%ld %s %ld.%ld %s", (uint32_t)latitude, (uint32_t)latTime, ns, (uint32_t)longitude, (uint32_t)lonTime, ew);
+
+		NotifyUser(&lpuart1, str, true);
+	}
+
 	return 0;
+}
+
+/*
+ * Description: Calculates checksum of NMEA message between '$' and '*'.
+ * Input: The NMEA message string
+ * return: true if checksum matches, else false
+ */
+bool NMEA_CalculateChecksum(char *msg)
+{
+    uint8_t cksum = 0;
+    uint8_t endCksum;
+    int i = 0;
+    char *_crc;
+
+    for(i = 1; i < strlen(msg) - 5; i++) // minus the "*hh\r\n" characters
+    {
+        cksum ^= (uint8_t)msg[i];
+    }
+
+    _crc = strtok(&msg[++i], "\r"); // skip '*' character and save up to CR
+    endCksum = strtol(_crc, NULL, 16); // save hex string as uint8_t value
+
+    if(cksum == endCksum)
+    {
+        return true;
+    }
+
+    return false;
 }
 
 /*

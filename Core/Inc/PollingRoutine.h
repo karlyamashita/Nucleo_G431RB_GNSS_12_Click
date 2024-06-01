@@ -26,6 +26,11 @@
 
 */
 
+typedef struct
+{
+	bool parse;
+	bool googleMaps;
+}Flags_t;
 
 void PollingInit(void);
 void PollingRoutine(void);

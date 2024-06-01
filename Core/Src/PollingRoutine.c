@@ -16,7 +16,8 @@ extern TimerCallbackStruct timerCallback;
 extern UART_HandleTypeDef hlpuart1;
 extern UART_HandleTypeDef huart1;
 
-bool ParseMode = false;
+Flags_t flags = {0};
+
 
 // Init uart2 or lpuart1
 UartBufferStruct lpuart1 =
@@ -69,12 +70,20 @@ void UART_Parse_1(UartBufferStruct *msg)
 {
 	UartDataStruct *ptr;
 	char str[32] = {0};
+	char msgCopy[512] = {0};
 
 	if(UART_RxMessagePending(msg))
 	{
 		ptr = msg->rx.msgToParse;
+		memcpy(&msgCopy, &ptr->data, strlen((char*)ptr->data));
 
-		if(ParseMode) // parse data. We're parsing 3 messages here
+		if(!NMEA_CalculateChecksum(msgCopy))
+		{
+			NotifyUser(&lpuart1, "Checksum mismatch", true);
+			return;
+		}
+
+		if(flags.parse) // parse data. We're parsing 3 messages here
 		{
 			if(strncmp((char*)ptr->data, "$GNVTG", strlen("$GNVTG")) == 0)
 			{
@@ -114,11 +123,19 @@ void UART_Parse_lp1(UartBufferStruct *msg)
 
 		if(strncmp((char*)ptr->data, "setparse:1", strlen("setparse:1")) == 0)
 		{
-			ParseMode = 1;
+			flags.parse = 1;
 		}
-		else // setparse:0
+		else if(strncmp((char*)ptr->data, "setparse:0", strlen("setparse:0")) == 0) // setparse:0
 		{
-			ParseMode = 0;
+			flags.parse = 0;
+		}
+		else if(strncmp((char*)ptr->data, "setgoogle:1", strlen("setgoogle:1")) == 0)
+		{
+			flags.googleMaps = 1;
+		}
+		else if(strncmp((char*)ptr->data, "setgoogle:0", strlen("setgoogle:0")) == 0)
+		{
+			flags.googleMaps = 0;
 		}
 		NotifyUser(&uart1, (char*)ptr->data, false);
 	}
