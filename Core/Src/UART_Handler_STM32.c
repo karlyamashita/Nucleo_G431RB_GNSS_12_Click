@@ -25,6 +25,7 @@ UartBufferStruct lpuart1 =
 	.rx.queueSize = UART_RX_QUEUE_SIZE,
 	.tx.queueSize = UART_TX_QUEUE_SIZE,
 	.rx.dataSize = UART_RX_DATA_SIZE,
+	.rx.uartIRQ_Callback = LED_Toggle
 };
 
 UartBufferStruct uart1 =
