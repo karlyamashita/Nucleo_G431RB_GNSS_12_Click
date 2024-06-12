@@ -42,9 +42,8 @@ extern "C" {
 #define Nop() asm(" NOP ")
 
 #include "RingBuffer.h"
-#include "UartCharBuffer.h"
+#include "UART_Buffer.h"
 #include "UART_Handler_STM32.h"
-#include "NotifyUser.h"
 #include "TimerCallback.h"
 #include "NMEA_Handler.h"
 #include "StringManip.h"

@@ -13,7 +13,7 @@ extern Flags_t flags;
 
 int NMEA_GNGLL(char *msg)
 {
-	char str[UART_TX_BYTE_BUFFER_SIZE] = {0};
+	char str[UART_TX_DATA_SIZE] = {0};
 	char *nmea = strtok_f(msg, ',');
 	char *lat = strtok_f(NULL, ',');
 	char *ns = strtok_f(NULL, ',');
@@ -25,14 +25,14 @@ int NMEA_GNGLL(char *msg)
 
 	sprintf(str, "%s = lat: %s, ns: %s, lon: %s, ew: %s, time: %s, status: %s, posMode: %s", nmea, lat, ns, lon, ew, time, status, posMode);
 
-	NotifyUser(&lpuart1, str, true);
+	UART_NotifyUser(&lpuart1, str, strlen(str), true);
 
 	return 0;
 }
 
 int NMEA_GNVTG(char *msg)
 {
-	char str[UART_TX_BYTE_BUFFER_SIZE] = {0};
+	char str[UART_TX_DATA_SIZE] = {0};
 	char *nmea = strtok_f(msg, ',');
 	char *cogt = strtok_f(NULL, ',');
 	char *cogtUnit = strtok_f(NULL, ',');
@@ -47,7 +47,7 @@ int NMEA_GNVTG(char *msg)
 	sprintf(str, "%s = cogt: %s, cogtUnit: %s, cogm: %s, cogmUnit: %s, sogn: %s, sognUnit: %s, sogk: %s, sogkUnit: %s, posMode: %s", \
 						nmea, cogt, cogtUnit, cogm, cogmUnit, sogn, sognUnit, sogk, sogkUnit, posMode);
 
-	NotifyUser(&lpuart1, str, true);
+	UART_NotifyUser(&lpuart1, str, strlen(str), true);
 
 	return 0;
 }
@@ -55,7 +55,7 @@ int NMEA_GNVTG(char *msg)
 
 int NMEA_GNRMC(char *msg)
 {
-	char str[UART_TX_BYTE_BUFFER_SIZE] = {0};
+	char str[UART_TX_DATA_SIZE] = {0};
 	char *nmea = strtok_f(msg, ',');
 	char *time = strtok_f(NULL, ',');
 	char *status = strtok_f(NULL, ',');
@@ -78,7 +78,7 @@ int NMEA_GNRMC(char *msg)
 	sprintf(str, "%s = time: %s, status: %s, lat: %s, ns: %s, lon: %s, ew: %s, spd: %s, cog: %s, date: %s, mvew: %s, posMode: %s, navStatus: %s",
 						nmea, time, status, lat, ns, lon, ew, spd, cog, date, mvew, posMode, navStatus);
 
-	NotifyUser(&lpuart1, str, true);
+	UART_NotifyUser(&lpuart1, str, strlen(str), true);
 
 	if(flags.googleMaps)
 	{
@@ -95,7 +95,7 @@ int NMEA_GNRMC(char *msg)
 
 		sprintf(str, "Copy this to Google Maps-> %ld.%ld %s %ld.%ld %s", (uint32_t)latitude, (uint32_t)latTime, ns, (uint32_t)longitude, (uint32_t)lonTime, ew);
 
-		NotifyUser(&lpuart1, str, true);
+		UART_NotifyUser(&lpuart1, str, strlen(str), true);
 	}
 
 	return 0;

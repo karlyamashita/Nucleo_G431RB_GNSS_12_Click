@@ -11,18 +11,23 @@
 #include "main.h"
 
 
+
+
+
 /* 	MAX_UART_RX_IRQ_BYTE_LENGTH is for the UART IRQ.
  *	If packets with MOD256 checksum, then change to received packet size.
  *
  */
 #define UART_RX_IRQ_BYTE_SIZE 1 // Typically this is 1 byte for most uC.
 
-#define UART_RX_BYTE_BUFFER_SIZE 512 // this holds all the IRQ data
-#define UART_TX_BYTE_BUFFER_SIZE 512
-#define UART_RX_MESSAGE_QUEUE_SIZE 8// buffer size of complete strings or packets.
-#define UART_TX_MESSAGE_QUEUE_SIZE 8 // buffer size of complete strings or packets.
+#define UART_RX_DATA_SIZE 256 // this holds all the IRQ data
+#define UART_TX_DATA_SIZE 256
+#define UART_RX_QUEUE_SIZE 8// buffer size of complete strings or packets.
+#define UART_TX_QUEUE_SIZE 8 // buffer size of complete strings or packets.
 
 // end user defines
+
+typedef void (*UART_Callback)(void);
 
 
 // buffer status
@@ -46,7 +51,7 @@ typedef enum CheckSumType
 
 typedef struct
 {
-	uint8_t data[UART_RX_BYTE_BUFFER_SIZE];
+	uint8_t data[UART_RX_DATA_SIZE];
 	uint32_t size;
 }UartDataStruct;
 
@@ -60,12 +65,13 @@ typedef struct
     struct
 	{
     	uint8_t irqByte; // UART IRQ needs to save Rx byte to this variable
-		UartDataStruct queue[UART_RX_MESSAGE_QUEUE_SIZE];
+		UartDataStruct queue[UART_RX_QUEUE_SIZE];
 		uint32_t queueSize;
 		UartDataStruct *msgToParse;
+		UART_Callback uartIRQ_Callback; // the function to call after a Rx interrupt
 
-    	uint8_t binaryBuffer[UART_RX_BYTE_BUFFER_SIZE]; // For binary data, bytes saved here as they come in from uartIRQ_ByteBuffer.
-    	uint32_t byteSize;
+    	uint8_t binaryBuffer[UART_RX_DATA_SIZE]; // For binary data, bytes saved here as they come in from uartIRQ_ByteBuffer.
+    	uint32_t dataSize;
 		uint32_t packetSize; // for binary packets
 
 		RING_BUFF_STRUCT bytePtr; // pointer for byteBuffer
@@ -77,12 +83,18 @@ typedef struct
 	}rx;
 	struct
 	{
-		UartDataStruct queue[UART_TX_MESSAGE_QUEUE_SIZE];
+		UartDataStruct queue[UART_TX_QUEUE_SIZE];
 		uint32_t queueSize;
 		UartDataStruct *msgToSend;
+		UART_Callback uartIRQ_Callback; // the function to call after Tx interrupt
 		RING_BUFF_STRUCT ptr; // pointer for queue
+#ifdef css
+		uint32_t msgToSend_BytePtr;
+		bool msgToSend_Pending;
+#endif
 	}tx;
 }UartBufferStruct;
+
 
 // add to buffer
 void UART_AddByteToBuffer(UartBufferStruct *msg);

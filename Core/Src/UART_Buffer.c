@@ -26,7 +26,6 @@
  */
 
 #include "main.h"
-#include "UartCharBuffer.h"
 
 
 /*
@@ -38,7 +37,7 @@ void UART_AddByteToBuffer(UartBufferStruct *msg)
 	if(msg->rx.uartType == UART_ASCII)
 	{
 		msg->rx.queue[msg->rx.ptr.index_IN].data[msg->rx.bytePtr.index_IN] = msg->rx.irqByte; // save byte to current queue
-		RingBuff_Ptr_Input(&msg->rx.bytePtr, msg->rx.byteSize); // increment byte pointer
+		RingBuff_Ptr_Input(&msg->rx.bytePtr, msg->rx.dataSize); // increment byte pointer
 		if(msg->rx.irqByte == '\n') // check for LF
 		{
 			msg->rx.queue[msg->rx.ptr.index_IN].data[msg->rx.bytePtr.index_IN] = 0; // add null
@@ -50,7 +49,7 @@ void UART_AddByteToBuffer(UartBufferStruct *msg)
 	else if(msg->rx.uartType == UART_BINARY)
 	{
 		msg->rx.binaryBuffer[msg->rx.bytePtr.index_IN] = msg->rx.irqByte;
-		RingBuff_Ptr_Input(&msg->rx.bytePtr, msg->rx.byteSize); // increment byte pointer
+		RingBuff_Ptr_Input(&msg->rx.bytePtr, msg->rx.dataSize); // increment byte pointer
 		if(msg->rx.bytePtr.index_IN >= msg->rx.packetSize) // check if byte pointer equals packet size
 		{
 			msg->rx.queue[msg->rx.ptr.index_IN].size = msg->rx.bytePtr.index_IN; // save size

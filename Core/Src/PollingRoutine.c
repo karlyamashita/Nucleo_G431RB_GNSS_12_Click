@@ -13,45 +13,24 @@
 #include "main.h"
 
 extern TimerCallbackStruct timerCallback;
-extern UART_HandleTypeDef hlpuart1;
-extern UART_HandleTypeDef huart1;
+extern  UartBufferStruct lpuart1;
+extern UartBufferStruct uart1;
 
 Flags_t flags = {0};
 
 
-// Init uart2 or lpuart1
-UartBufferStruct lpuart1 =
-{
-	.huart = &hlpuart1,
-	.rx.uartType = UART_ASCII,
-	.rx.irqByte = 0,
-	.rx.queueSize = UART_RX_MESSAGE_QUEUE_SIZE,
-	.tx.queueSize = UART_TX_MESSAGE_QUEUE_SIZE,
-	.rx.byteSize = UART_RX_BYTE_BUFFER_SIZE
-};
-
-UartBufferStruct uart1 =
-{
-	.huart = &huart1,
-	.rx.uartType = UART_ASCII,
-	.rx.irqByte = 0,
-	.rx.queueSize = UART_RX_MESSAGE_QUEUE_SIZE,
-	.tx.queueSize = UART_TX_MESSAGE_QUEUE_SIZE,
-	.rx.byteSize = UART_RX_BYTE_BUFFER_SIZE
-};
-
 void PollingInit(void)
 {
 	TimerCallbackRegisterOnly(&timerCallback, LED_Toggle);
-	TimerCallbackTimerStart(&timerCallback, LED_Toggle, 500, TIMER_REPEAT);
+	//TimerCallbackTimerStart(&timerCallback, LED_Toggle, 500, TIMER_REPEAT);
 
 	TimerCallbackRegisterOnly(&timerCallback, PB_Pressed);
 
 	UART_EnableRxInterrupt(&uart1);
 	UART_EnableRxInterrupt(&lpuart1);
 
-	NotifyUser(&lpuart1, "LPUART1 Ready", true);
-	NotifyUser(&uart1, "UART1 Ready", true);
+	UART_NotifyUser(&lpuart1, "LPUART1 Ready", strlen("LPUART1 Ready"), true);
+	UART_NotifyUser(&uart1, "UART1 Ready", strlen("UART1 Ready"), true);
 }
 
 void PollingRoutine(void)
@@ -79,7 +58,7 @@ void UART_Parse_1(UartBufferStruct *msg)
 
 		if(!NMEA_CalculateChecksum(msgCopy))
 		{
-			NotifyUser(&lpuart1, "Checksum mismatch", true);
+			UART_NotifyUser(&lpuart1, "Checksum mismatch", strlen("Checksum mismatch"), true);
 			return;
 		}
 
@@ -101,12 +80,12 @@ void UART_Parse_1(UartBufferStruct *msg)
 			else // unknown command
 			{
 				sprintf(str, "%s is not in the list to parse.", strtok((char*)ptr->data, ","));
-				NotifyUser(&lpuart1, str, true);
+				UART_NotifyUser(&lpuart1, str, strlen(str), true);
 			}
 		}
 		else // pass through messages from NEO-M8N to VCP
 		{
-			NotifyUser(&lpuart1, (char*)ptr->data, false);
+			UART_NotifyUser(&lpuart1, (char*)ptr->data, strlen((char*)ptr->data), false);
 		}
 	}
 }
@@ -137,33 +116,7 @@ void UART_Parse_lp1(UartBufferStruct *msg)
 		{
 			flags.googleMaps = 0;
 		}
-		NotifyUser(&uart1, (char*)ptr->data, false);
-	}
-}
-
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-	if(huart == uart1.huart)
-	{
-		UART_AddByteToBuffer(&uart1);
-		UART_EnableRxInterrupt(&uart1);
-	}
-	else if(huart == lpuart1.huart)
-	{
-		UART_AddByteToBuffer(&lpuart1);
-		UART_EnableRxInterrupt(&lpuart1);
-	}
-}
-
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
-{
-	if(huart == uart1.huart)
-	{
-		UART_TxMessage_IT(&uart1);
-	}
-	else if(huart == lpuart1.huart)
-	{
-		UART_TxMessage_IT(&lpuart1);
+		UART_NotifyUser(&uart1, (char*)ptr->data, strlen((char*)ptr->data), false);
 	}
 }
 
